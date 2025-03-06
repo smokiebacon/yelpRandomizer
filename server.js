@@ -8,7 +8,8 @@ const path = require("path");
 const port = process.env.PORT || 10000;
 
 // Serve static files from the current directory
-app.use("/yelp-randomizer", express.static(__dirname));
+// app.use("/yelp-randomizer", express.static(__dirname));
+app.use(express.static(__dirname));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -75,10 +76,8 @@ async function scrapeYelpCollection() {
 app.get("/yelp-randomizer", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
-
-// Health check endpoint for Render
-app.get("/", (req, res) => {
-  res.status(200).send("OK");
+app.get(["/", "/yelp-randomizer"], (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
 });
 
 app.listen(port, () => {
