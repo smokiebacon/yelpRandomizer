@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Yelp Restaurant Spinner</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" type="text/css" href="styles.css" />
+    <!-- Bootstrap CSS -->
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    />
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+  </head>
+
+  <body>
+    <div class="hero-container">
+      <h1><i class="fas fa-utensils"></i> Yelp Restaurant Randomizer</h1>
+      <p class="lead">Discover your next dining adventure!</p>
+    </div>
+
+    <div class="form-container">
+      <form id="urlForm">
+        <div class="row justify-content-center">
+          <div class="col-md-15">
+            <div id="loader" class="loader"></div>
+            <div class="mb-4">
+              <label for="urlInput" class="form-label">
+                <i class="fas fa-link"></i> Enter Your Yelp Collection Link
+              </label>
+              <div class="input-group">
+                <input
+                  autofocus
+                  type="url"
+                  id="urlInput"
+                  name="urlInput"
+                  class="form-control"
+                  placeholder="https://www.yelp.com/collection/..."
+                  required
+                />
+                <div class="input-group-append">
+                  <button
+                    type="submit"
+                    class="btn btn-primary"
+                    onclick="submitUrl(event)"
+                  >
+                    <i class="fas fa-search"></i> Submit
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div id="collection-info" class="collection-info"></div>
+
+            <ul
+              class="nav nav-pills mb-4 justify-content-center"
+              id="pills-tab"
+              role="tablist"
+            >
+              <li class="nav-item" role="presentation">
+                <button
+                  class="nav-link"
+                  id="pills-profile-tab"
+                  data-toggle="pill"
+                  data-target="#pills-profile"
+                  type="button"
+                  role="tab"
+                  aria-controls="pills-profile"
+                  aria-selected="false"
+                >
+                  <i class="fas fa-list"></i> List of Restaurants
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button
+                  onclick="randomizeRestaurant()"
+                  class="nav-link"
+                  id="pills-contact-tab"
+                  data-toggle="pill"
+                  data-target="#pills-contact"
+                  type="button"
+                  role="tab"
+                  aria-controls="pills-contact"
+                  aria-selected="false"
+                >
+                  <i class="fas fa-random"></i> Randomize
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button
+                  class="nav-link active"
+                  id="pills-home-tab"
+                  data-toggle="pill"
+                  data-target="#pills-home"
+                  type="button"
+                  role="tab"
+                  aria-controls="pills-home"
+                  aria-selected="false"
+                >
+                  <i class="fas fa-dice"></i> Card Packs
+                </button>
+              </li>
+            </ul>
+
+            <div class="tab-content" id="pills-tabContent">
+              <div
+                class="tab-pane fade show active"
+                id="pills-home"
+                role="tabpanel"
+                aria-labelledby="pills-home-tab"
+                tabindex="0"
+              >
+                <div class="text-center mb-4">
+                  <h3>
+                    <i class="fas fa-magic"></i> Click on any card to reveal the
+                    restaurant!
+                  </h3>
+                </div>
+                <div id="cards-container" class="cards-grid"></div>
+              </div>
+
+              <div
+                class="tab-pane fade"
+                id="pills-profile"
+                role="tabpanel"
+                aria-labelledby="pills-profile-tab"
+                tabindex="0"
+              >
+                <div class="text-center mb-4">
+                  <h3><i class="fas fa-list-ul"></i> All Restaurants</h3>
+                </div>
+                <div id="restaurants-container" class="restaurants-list"></div>
+              </div>
+
+              <div
+                class="tab-pane fade"
+                id="pills-contact"
+                role="tabpanel"
+                aria-labelledby="pills-contact-tab"
+                tabindex="0"
+              >
+                <div class="text-center">
+                  <h3><i class="fas fa-random"></i> Random Restaurant</h3>
+                  <div id="random-container" class="random-result mt-4"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/motion@11.11.13/dist/motion.js"></script>
+    <script>
+      const { animate, scroll, stagger } = Motion;
+    </script>
+    <script>
+      async function submitUrl(e) {
+        e.preventDefault();
+        const urlInput = document.getElementById("urlInput").value;
+        const loader = document.getElementById("loader");
+        const collectionInfo = document.getElementById('collection-info');
+        
+        // Show loading state
+        collectionInfo.innerHTML = `
+          <div class="info-container loading">
+            <div class="spinner-border text-primary" role="status">
+              <span class="sr-only">Loading...</span>
+            </div>
+            <p class="loading-text">Processing your Yelp collection...</p>
+          </div>
+        `;
+
+        // Validate URL format and Yelp collection
+        const yelpCollectionRegex = /^https:\/\/(?:www\.)?yelp\.com\/collection\/[A-Za-z0-9_-]+/;
+        
+        // Check if URL is valid
+        if (!yelpCollectionRegex.test(urlInput)) {
+          collectionInfo.innerHTML = `
+            <div class="info-container error">
+              <p class="url-display">
+                <i class="fas fa-exclamation-circle"></i> Invalid URL format. Please enter a valid Yelp collection URL.
+              </p>
+            </div>
+          `;
+          loader.style.display = "none";
+          urlInput.value = "";
+
+          return;
+        }
+
+        try {
+          const response = await fetch("/yelp-randomizer/submit-url", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ urlInput }),
+          });
+          const data = await response.json();
+          if (data) {
+            try {
+              const restaurantResponse = await fetch("/yelp-randomizer/get-restaurants");
+              const restaurantData = await restaurantResponse.json();
+              if (restaurantData) {
+                // Update collection info with success message
+                collectionInfo.innerHTML = `
+                  <div class="info-container success">
+                    <a class="url-display" href="${urlInput}" target="_blank"><i class="fas fa-link"></i> ${urlInput}</a>
+                    <p class="restaurant-count">
+                      <i class="fas fa-store"></i> ${restaurantData.restaurants.length} restaurants loaded
+                    </p>
+                  </div>
+                `;
+                populateTabs(restaurantData.restaurants);
+                urlInput.value = ""; // Clear on success
+              }
+            } catch (error) {
+              collectionInfo.innerHTML = `
+                <div class="info-container error">
+                  <p class="url-display">
+                    <i class="fas fa-exclamation-circle"></i> Error fetching restaurants. Please try again.
+                  </p>
+                </div>
+              `;
+              urlInput.value = ""; // Clear on error
+              console.error("Error fetching restaurant data:", error);
+            }
+          }
+        } catch (error) {
+          collectionInfo.innerHTML = `
+            <div class="info-container error">
+              <p class="url-display">
+                <i class="fas fa-exclamation-circle"></i> Error submitting URL. Please try again.
+              </p>
+            </div>
+          `;
+          urlInput.value = ""; // Clear on error
+          console.error("Error submitting URL:", error);
+        } finally {
+          loader.style.display = "none";
+        }
+      }
+
+      function displayListOfRestaurants(restaurants, profileTab) {
+        // Create the list group element
+        const listGroup = document.createElement("ul");
+        listGroup.classList.add("list-group");
+        listGroup.classList.add("justify-content-center");
+
+        restaurants.forEach((restaurant) => {
+          const item = document.createElement("li");
+          item.classList.add("list-group-item");
+          item.textContent = restaurant;
+
+          // Append each item to the list group
+          listGroup.appendChild(item);
+        });
+
+        // Clear existing content and append the new list group
+        profileTab.innerHTML = ""; // Clear existing content
+        profileTab.appendChild(listGroup); // Append the list group to the profile tab
+      }
+
+      function randomizeRestaurant() {
+        const contactTab = document.getElementById("random-container");
+        const restaurants = JSON.parse(localStorage.getItem("restaurants")) || [];
+        
+        if (restaurants.length > 0) {
+          const randomRestaurant = restaurants[Math.floor(Math.random() * restaurants.length)];
+          contactTab.innerHTML = `
+            <div class="alert alert-success">
+              <i class="fas fa-utensils"></i> Random Restaurant Picked: 
+              <strong>${randomRestaurant}</strong>
+            </div>
+          `;
+        }
+      }
+
+      // New function to populate tabs with restaurant data
+      function populateTabs(restaurants) {
+        const homeTab = document.getElementById("cards-container");
+        const profileTab = document.getElementById("restaurants-container");
+        const contactTab = document.getElementById("random-container");
+
+        // Debug log to see what's happening
+        console.log("Tabs found:", { homeTab, profileTab, contactTab });
+
+        // Check if all required elements exist
+        if (!homeTab || !profileTab || !contactTab) {
+          console.error("Required tab elements not found!");
+          return;
+        }
+
+        // Clear existing content
+        homeTab.innerHTML = "";
+        profileTab.innerHTML = "";
+        contactTab.innerHTML = "";
+
+        localStorage.setItem("restaurants", JSON.stringify(restaurants));
+
+        // Populate home tab with cards
+        restaurants.forEach((restaurant, index) => {
+          const cardContainer = document.createElement("div");
+          cardContainer.classList.add("card-container");
+
+          const card = document.createElement("div");
+          card.classList.add("card");
+          card.dataset.restaurant = restaurant;
+
+          const frontFace = document.createElement("div");
+          frontFace.classList.add("card-face-front");
+
+          const pokemonCard = document.createElement("img");
+          pokemonCard.src = "img/pokemon-card.png";
+          pokemonCard.style.width = "100%";
+          pokemonCard.style.height = "100%";
+          pokemonCard.style.objectFit = "cover";
+
+          const backFace = document.createElement("div");
+          backFace.classList.add("card-face-back");
+          backFace.innerHTML = `
+            <div class="restaurant-info">
+              <i class="fas fa-utensils mb-2"></i>
+              <p>${restaurant}</p>
+            </div>
+          `;
+
+          frontFace.appendChild(pokemonCard);
+          card.appendChild(backFace);
+          cardContainer.appendChild(card);
+
+          cardContainer.addEventListener("click", () => {
+            card.style.transform =
+              card.style.transform === "rotateY(180deg)"
+                ? "rotateY(0)"
+                : "rotateY(180deg)";
+          });
+
+          homeTab.appendChild(cardContainer);
+        });
+
+        // Animate cards entrance
+        animate(
+          ".card-container",
+          { opacity: 1, y: [110, 0] },
+          { delay: stagger(0.1) }
+        );
+
+        // Populate other tabs
+        displayListOfRestaurants(restaurants, profileTab);
+        randomizeRestaurant();
+      }
+    </script>
+  </body>
+</html>
+
+</html>
