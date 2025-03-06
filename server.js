@@ -8,9 +8,7 @@ const path = require("path");
 const port = process.env.PORT || 10000;
 
 // Serve static files from the current directory
-// app.use("/yelp-randomizer", express.static(__dirname));
-app.use(express.static(__dirname));
-
+app.use(express.static(path.join(__dirname, "/")));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
